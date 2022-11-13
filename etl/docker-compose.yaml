@@ -1,0 +1,36 @@
+version: '3'
+services:
+
+  db:
+    image: postgres:13-alpine
+    container_name: db
+    restart: on-failure
+    env_file:
+      - postgres.env
+    ports:
+      - "5433:5432"
+    volumes:
+      - db:/var/lib/postgresql/data
+      - ./db/movies_database.ddl:/docker-entrypoint-initdb.d/create_tables.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+      start_period: 10s 
+
+  es:
+    platform: linux/amd64
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.7.0
+    ports:
+      - "9200:9200"
+    environment:
+      - discovery.type=single-node
+    volumes:
+      - ./esdata:/usr/share/elasticsearch/data
+    
+volumes:
+  esdata:
+    driver: local
+  db:
+    driver: local
