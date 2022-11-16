@@ -16,3 +16,6 @@ fill_data: migrate
 	source env/bin/activate && \
 	cd etl/sqlite_to_postgres && \
 	python3 main.py
+
+test:
+	cd etl && python3 main.py

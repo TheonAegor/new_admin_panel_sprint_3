@@ -1,6 +1,5 @@
-version: '3'
+version: "3"
 services:
-
   db:
     image: postgres:13-alpine
     container_name: movies-db
@@ -17,7 +16,7 @@ services:
       interval: 5s
       timeout: 10s
       retries: 5
-      start_period: 10s 
+      start_period: 10s
 
   es:
     platform: linux/amd64
@@ -27,14 +26,26 @@ services:
       - "9200:9200"
     environment:
       - discovery.type=single-node
+      - bootstrap.system_call_filter=false
     volumes:
       - esdata:/usr/share/elasticsearch/data
     depends_on:
       db:
-        condition: service_healthy 
-    
+        condition: service_healthy
+
+  state:
+    container_name: state-saver
+    image: redis:6.2-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - state:/data
+
 volumes:
   esdata:
     driver: local
   db:
+    driver: local
+  state:
     driver: local

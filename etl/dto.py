@@ -1,8 +1,6 @@
-import dataclasses
 import datetime
 from dataclasses import asdict, dataclass, fields
 from typing import List
-from uuid import uuid4
 
 from pydantic import BaseModel
 
@@ -23,7 +21,7 @@ class FilmWork:
 
     @classmethod
     def get_fields(cls):
-        return [f.name for f in fields(cls)]
+        return [field.name for field in fields(cls)]
 
 
 @dataclass

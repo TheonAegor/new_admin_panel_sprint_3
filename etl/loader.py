@@ -1,20 +1,19 @@
 import abc
-import json
 import typing as tp
 
 import requests
-from dto import ConnectionDetails, FilmWork, EnrichedFilmWork
+from dto import ConnectionDetails, EnrichedFilmWork
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
 from utils import logger
 
 
 class IDataAccessor(abc.ABC):
-    def push(self, data):
-        raise NotImplemented
+    def push(self, index_data):
+        raise NotImplementedError
 
-    def push_bulk(self, data):
-        raise NotImplemented
+    def push_bulk(self, index_data):
+        raise NotImplementedError
 
 
 class ElasticAccessor(IDataAccessor):
@@ -30,20 +29,96 @@ class ElasticAccessor(IDataAccessor):
         self.elastic = Elasticsearch(hosts=[f"{base_url}:{port}"])
         self.bulk_endpoint = "/_bulk"
         self.single_endpoint = f"/{self.index}/_doc/"
+        self._post_init()
 
-    def gen_data(self, data: tp.List[EnrichedFilmWork]):
-        logger.info('Start generating data')
+    def if_index_not_exist(self):
+        request_body = {
+            "settings": {
+                "refresh_interval": "1s",
+                "analysis": {
+                    "filter": {
+                        "english_stop": {
+                            "type": "stop",
+                            "stopwords": "_english_",
+                        },
+                        "english_stemmer": {
+                            "type": "stemmer",
+                            "language": "english",
+                        },
+                        "english_possessive_stemmer": {
+                            "type": "stemmer",
+                            "language": "possessive_english",
+                        },
+                        "russian_stop": {
+                            "type": "stop",
+                            "stopwords": "_russian_",
+                        },
+                        "russian_stemmer": {
+                            "type": "stemmer",
+                            "language": "russian",
+                        },
+                    },
+                    "analyzer": {
+                        "ru_en": {
+                            "tokenizer": "standard",
+                            "filter": [
+                                "lowercase",
+                                "english_stop",
+                                "english_stemmer",
+                                "english_possessive_stemmer",
+                                "russian_stop",
+                                "russian_stemmer",
+                            ],
+                        }
+                    },
+                },
+            },
+            "mappings": {
+                "dynamic": "strict",
+                "properties": {
+                    "id": {"type": "keyword"},
+                    "imdb_rating": {"type": "float"},
+                    "genre": {"type": "keyword"},
+                    "title": {
+                        "type": "text",
+                        "analyzer": "ru_en",
+                        "fields": {"raw": {"type": "keyword"}},
+                    },
+                    "description": {"type": "text", "analyzer": "ru_en"},
+                    "director": {"type": "text", "analyzer": "ru_en"},
+                    "actors_names": {"type": "text", "analyzer": "ru_en"},
+                    "writers_names": {"type": "text", "analyzer": "ru_en"},
+                    "actors": {
+                        "type": "nested",
+                        "dynamic": "strict",
+                        "properties": {
+                            "id": {"type": "keyword"},
+                            "name": {"type": "text", "analyzer": "ru_en"},
+                        },
+                    },
+                    "writers": {
+                        "type": "nested",
+                        "dynamic": "strict",
+                        "properties": {
+                            "id": {"type": "keyword"},
+                            "name": {"type": "text", "analyzer": "ru_en"},
+                        },
+                    },
+                },
+            },
+        }
+        if not self.elastic.indices.exists(index=self.index):
+            self.elastic.indices.create(index=self.index, body=request_body)
+
+    def gen_data(self, filmworks: tp.List[EnrichedFilmWork]):
+        logger.info("Start generating data")
         ret = []
-        for filmwork in data:
-            print(type(filmwork))
-            print(filmwork)
+        for filmwork in filmworks:
             ret.append(
                 {
                     "_index": self.index,
                     "_id": filmwork.id,
-                    "actors": [
-                        *filmwork.get_actors()
-                    ],
+                    "actors": [*filmwork.get_actors()],
                     "actors_names": filmwork.get_actors_names(),
                     "description": filmwork.description,
                     "director": filmwork.director,
@@ -51,80 +126,32 @@ class ElasticAccessor(IDataAccessor):
                     "id": filmwork.id,
                     "imdb_rating": filmwork.imdb_rating,
                     "title": filmwork.title,
-                    "writers": [
-                        *filmwork.get_writers()
-                    ],
+                    "writers": [*filmwork.get_writers()],
                     "writers_names": filmwork.get_writers_names(),
                 }
             )
         return ret
 
-    def push(self, data):
+    def push(self, index_data):
         logger.info("Creating bulk request...")
-        # single_data = self.prepare_data_for_single(data)
-        # json_single_data = json.dumps(single_data)
-        # logger.debug(json_single_data)
-        bulk(self.elastic, self.gen_data(data))
-        # response = requests.post(
-        #     url=f"{self.base_url}:{self.port}{self.single_endpoint}",
-        #     json=json_single_data,
-        #     headers={"Content-Type": "application/x-ndjson"},
-        # )
-        # if response.status_code >= 400:
-        #     logger.error(response.content)
+        bulk(self.elastic, self.gen_data(index_data))
         logger.info("Bulk request is done!")
 
-    def prepare_data_for_single(self, data: tp.List[FilmWork]):
-        ret = ""
-        even_line_template = (
-            '{{"index": {{"_index": "{index}", "_id": "{film_id}"}}}}\n'
-        )
-        odd_line_template = """{{ \
-            "actors": [{{"id":"{actor_id}","name":"{actor_name}"}}], \
-            "actors_names":"{actor_name}", \
-            "description":"{description}", \
-            "director":"{director}", \
-            "genre":"{genre}", \
-            "id":"{id}", \
-            "imdb_rating":"{imdb_rating}", \
-            "title":"{title}", \
-            "writers":[{{"id":"{writer_id}","name":"{writer_name}"}}], \
-            "writers_names":"{writer_name}" \
-            }}\n"""
-        for filmwork in data:
-            logger.debug(filmwork.title)
-            # logger.debug(odd_line_formatted)
-            even_line_formatted = even_line_template.format(
-                index=self.index, film_id=filmwork.id
-            )
-            odd_line_formatted = odd_line_template.format(
-                actor_id=filmwork.actor_id,
-                actor_name=filmwork.actor_name,
-                description=filmwork.description,
-                genre=filmwork.genre_name,
-                id=filmwork.id,
-                imdb_rating=filmwork.rating,
-                director=filmwork.actor_name,
-                title=filmwork.title,
-                writer_id=filmwork.actor_id,
-                writer_name=filmwork.actor_name,
-            )
-            ret += even_line_formatted
-            ret += odd_line_formatted
-        return ret
-
-    def push_batch(self, data):
-        bulk_data = self.prepare_data_for_bulk(data)
+    def push_batch(self, index_data):
+        bulk_data = self.prepare_data_for_bulk(index_data)
         requests.post(
             url=f"{self.base_url}{self.port}{self.bulk_endpoint}",
             data=bulk_data,
         )
 
+    def _post_init(self):
+        self.if_index_not_exist()
+
 
 class Loader:
     def __init__(
         self,
-        data: tp.List[tp.Any],
+        index_data: tp.List[tp.Any],
         conn_details: ConnectionDetails = {},
         data_accessor: IDataAccessor = ElasticAccessor,
         **extra_accessor_kwargs,
@@ -132,7 +159,10 @@ class Loader:
         self.data_accessor = data_accessor(
             **conn_details, **extra_accessor_kwargs
         )
-        self.data = data
+        self.index_data = index_data
 
     def load(self):
-        self.data_accessor.push(self.data)
+        if not len(self.index_data):
+            logger.info("Objects to load are empty!")
+            return
+        self.data_accessor.push(self.index_data)

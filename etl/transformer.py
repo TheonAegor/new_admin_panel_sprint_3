@@ -1,6 +1,6 @@
 from typing import Any, List
 
-from dto import EnrichedFilmWork, FilmWork, Person
+from dto import EnrichedFilmWork, Person
 from utils import logger
 
 
@@ -19,10 +19,6 @@ class Transformer:
         self.objects = objects
         return list(self.objects.values())
 
-    def enrich_with_field(self):
-
-        pass
-
     def add_info_to_fw(self, fw_object: EnrichedFilmWork, fw):
         role = fw["person_role"]
         person_name = fw["person_name"]
@@ -40,7 +36,7 @@ class Transformer:
                 fw_object.director = person_name
 
     def build_enrichedfw(self, fw):
-        director = fw["person_role"] == "director" if "director" else ""
+        director = "director" if fw["person_role"] == "director" else ""
         actors = (
             [Person(fw["person_id"], fw["person_name"])]
             if fw["person_role"] == "actor"
@@ -76,6 +72,9 @@ class Transformer:
         return ret
 
     def transform_for_es(self):
+        if not len(self.raw_objects):
+            logger.info("Objects to transform are empty!")
+            return self.raw_objects
         objects = self.transform_to_objects()
         logger.info("Objects transformed!")
         return objects
