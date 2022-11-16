@@ -5,7 +5,7 @@ import requests
 from dto import ConnectionDetails, EnrichedFilmWork
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
-from utils import logger
+from utils import backoff, logger
 
 
 class IDataAccessor(abc.ABC):
@@ -31,6 +31,7 @@ class ElasticAccessor(IDataAccessor):
         self.single_endpoint = f"/{self.index}/_doc/"
         self._post_init()
 
+    @backoff()
     def if_index_not_exist(self):
         request_body = {
             "settings": {
@@ -108,7 +109,9 @@ class ElasticAccessor(IDataAccessor):
             },
         }
         if not self.elastic.indices.exists(index=self.index):
+            logger.info("Index didn't exist. Creating 'movies'...")
             self.elastic.indices.create(index=self.index, body=request_body)
+            logger.info(f"Index {self.index} succesfully created!")
 
     def gen_data(self, filmworks: tp.List[EnrichedFilmWork]):
         logger.info("Start generating data")
@@ -132,6 +135,7 @@ class ElasticAccessor(IDataAccessor):
             )
         return ret
 
+    @backoff()
     def push(self, index_data):
         logger.info("Creating bulk request...")
         bulk(self.elastic, self.gen_data(index_data))
@@ -162,7 +166,9 @@ class Loader:
         self.index_data = index_data
 
     def load(self):
+        logger.info("Start loading to Elastic objects...")
         if not len(self.index_data):
             logger.info("Objects to load are empty!")
             return
         self.data_accessor.push(self.index_data)
+        logger.info("Objects loaded!")
