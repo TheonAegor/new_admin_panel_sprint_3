@@ -1,7 +1,6 @@
 import os
 from dataclasses import astuple
 
-import psycopg2
 from dotenv import load_dotenv
 from dto.movies_objects import (
     FilmWork,
