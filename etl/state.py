@@ -12,7 +12,7 @@ def get_default(obj):
         return obj.isoformat()
 
 
-class BaseStorage:
+class BaseStorage(abc.ABC):
     @abc.abstractmethod
     def save_state(self, state: dict) -> None:
         """Сохранить состояние в постоянное хранилище"""
