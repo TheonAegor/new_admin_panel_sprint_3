@@ -1,5 +1,4 @@
 from dto import EnrichedFilmWork, Person
-from utils import logger
 
 
 class Transformer:

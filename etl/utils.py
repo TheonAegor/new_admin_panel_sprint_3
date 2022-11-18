@@ -38,7 +38,6 @@ LOGGING_CONFIG = {
     "root": {},
 }
 
-# logging.basicConfig(level=logging.DEBUG)
 logging.config.dictConfig(LOGGING_CONFIG)
 logger = logging.getLogger("simple")
 
@@ -59,29 +58,23 @@ def backoff(start_sleep_time=0.1, factor=2, border_sleep_time=10):
     """
 
     def func_wrapper(func):
-
         @wraps(func)
         def inner(*args, **kwargs):
             sleep_time = start_sleep_time
             ret = None
             while sleep_time <= border_sleep_time:
-                sleep(sleep_time)
                 try:
-                    ret = func(*args, **kwargs)
+                    return func(*args, **kwargs)
                 except OperationalError:
                     logger.error(
                         f"[{datetime.now().isoformat()}]Can not connect to db!"
                     )
-                    sleep_time = sleep_time * factor
-                    if sleep_time > border_sleep_time:
-                        sleep_time = border_sleep_time
                 except Exception as e:
                     logger.error(e)
-                    sleep_time = sleep_time * factor
-                    if sleep_time > border_sleep_time:
-                        sleep_time = border_sleep_time
-                else:
-                    return ret
+                sleep(sleep_time)
+                sleep_time = sleep_time * factor
+                if sleep_time > border_sleep_time:
+                    sleep_time = border_sleep_time
             return ret
 
         return inner
@@ -90,13 +83,12 @@ def backoff(start_sleep_time=0.1, factor=2, border_sleep_time=10):
 
 
 def gen_backoff(start_sleep_time=0.1, factor=2, border_sleep_time=10):
-    def func_wrapper(func):
+    def generator_wrapper(func):
         @wraps(func)
         def inner(*args, **kwargs):
             sleep_time = start_sleep_time
             ret = None
             while sleep_time <= border_sleep_time:
-                sleep(sleep_time)
                 try:
                     for ret in func(*args, **kwargs):
                         yield ret
@@ -104,18 +96,14 @@ def gen_backoff(start_sleep_time=0.1, factor=2, border_sleep_time=10):
                     logger.error(
                         f"[{datetime.now().isoformat()}]Can not connect to db!"
                     )
-                    sleep_time = sleep_time * factor
-                    if sleep_time > border_sleep_time:
-                        sleep_time = border_sleep_time
                 except Exception as e:
                     logger.error(e)
-                    sleep_time = sleep_time * factor
-                    if sleep_time > border_sleep_time:
-                        sleep_time = border_sleep_time
-                else:
-                    return ret
+                sleep(sleep_time)
+                sleep_time = sleep_time * factor
+                if sleep_time > border_sleep_time:
+                    sleep_time = border_sleep_time
             return ret
 
         return inner
 
-    return func_wrapper
+    return generator_wrapper
