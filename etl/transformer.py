@@ -70,10 +70,7 @@ class Transformer:
         return ret
 
     def transform_for_es(self):
-        logger.debug("Start transforming objects...")
         if not len(self.raw_objects):
-            logger.info("Objects to transform are empty!")
             return self.raw_objects
         objects = self.transform_to_objects()
-        logger.info("Objects transformed!")
         return objects
