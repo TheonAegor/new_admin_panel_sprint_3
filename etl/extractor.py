@@ -6,8 +6,9 @@ from uuid import uuid4
 import psycopg2
 from dto import FilmWork
 from psycopg2.extensions import cursor
+from sql_utils import full_filmwork_data_sql_template
 from state import state
-from utils import backoff, gen_backoff, logger
+from utils import gen_backoff, logger
 
 
 @contextlib.contextmanager
@@ -115,7 +116,8 @@ class Extractor:
             filmworks_ids = [row[0] for row in filmworks]
 
             logger.info(
-                f"{len(filmworks_ids)} has been extracted, film_work, based on {entity}!"
+                f"{len(filmworks_ids)} has been extracted, \
+                    film_work, based on {entity}!"
             )
             yield filmworks_ids
 
@@ -134,27 +136,11 @@ class Extractor:
                 if where
                 else ""
             )
-            sql = f"""
-                SELECT
-                    fw.id,
-                    fw.title,
-                    fw.description,
-                    fw.rating,
-                    fw.type,
-                    fw.created,
-                    fw.modified,
-                    pfw.role as person_role,
-                    p.id as person_id,
-                    p.full_name as person_name,
-                    g.name as genre_name
-                FROM content.film_work fw
-                LEFT JOIN content.person_film_work pfw ON pfw.film_work_id = fw.id
-                LEFT JOIN content.person p ON p.id = pfw.person_id
-                LEFT JOIN content.genre_film_work gfw ON gfw.film_work_id = fw.id
-                LEFT JOIN content.genre g ON g.id = gfw.genre_id
-                {where}
-                {lim};
-            """
+            sql = full_filmwork_data_sql_template % {
+                "lim": lim,
+                "where": where,
+            }
+
             self.make_query(cursor, sql)
             meta = cursor.description
             fullfilled_fws = cursor.fetchall()

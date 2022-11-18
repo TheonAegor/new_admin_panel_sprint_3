@@ -24,8 +24,8 @@ def main():
                 transformed_data = trans.transform_for_es()
                 loader = Loader(transformed_data)
                 loader.load()
-                state.set_state("is_first_run", False)
-                state.set_state("film_work_excepted_ids", None)
+            state.set_state("is_first_run", False)
+            state.set_state("film_work_excepted_ids", None)
         for entity in ["genre", "person", "film_work"]:
             logger.info(f"Looking for changes in {entity}")
             for entity_data in ex.extract(entity=entity):
