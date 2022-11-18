@@ -9,18 +9,18 @@ class Transformer:
     def transform_to_objects(self):
         objects = {}
         if self.raw_objects:
-            for fw in self.raw_objects:
-                if fw["id"] not in objects:
-                    objects[fw["id"]] = self.build_enrichedfw(fw)
+            for filmwork in self.raw_objects:
+                if filmwork["id"] not in objects:
+                    objects[filmwork["id"]] = self.build_enrichedfw(filmwork)
                 else:
-                    self.add_info_to_fw(objects[fw["id"]], fw)
+                    self.add_info_to_filmwork(objects[filmwork["id"]], filmwork)
         self.objects = objects
         return list(self.objects.values())
 
-    def add_info_to_fw(self, fw_object: EnrichedFilmWork, fw):
-        role = fw["person_role"]
-        person_name = fw["person_name"]
-        person = Person(fw["person_id"], person_name)
+    def add_info_to_filmwork(self, fw_object: EnrichedFilmWork, filmwork: dict):
+        role = filmwork["person_role"]
+        person_name = filmwork["person_name"]
+        person = Person(filmwork["person_id"], person_name)
         match role:
             case "actor":
                 if person not in fw_object.actors:
@@ -33,39 +33,39 @@ class Transformer:
             case "director":
                 fw_object.director = person_name
 
-    def build_enrichedfw(self, fw):
-        director = "director" if fw["person_role"] == "director" else ""
+    def build_enrichedfw(self, filmwork):
+        director = "director" if filmwork["person_role"] == "director" else ""
         actors = (
-            [Person(fw["person_id"], fw["person_name"])]
-            if fw["person_role"] == "actor"
+            [Person(filmwork["person_id"], filmwork["person_name"])]
+            if filmwork["person_role"] == "actor"
             else []
         )
         actors_names = (
-            [fw["person_name"]] if fw["person_role"] == "actor" else []
+            [filmwork["person_name"]] if filmwork["person_role"] == "actor" else []
         )
         writers = (
-            [Person(fw["person_id"], fw["person_name"])]
-            if fw["person_role"] == "writer"
+            [Person(filmwork["person_id"], filmwork["person_name"])]
+            if filmwork["person_role"] == "writer"
             else []
         )
         writers_names = (
-            [fw["person_name"]] if fw["person_role"] == "writer" else []
+            [filmwork["person_name"]] if filmwork["person_role"] == "writer" else []
         )
 
         ret = EnrichedFilmWork(
-            id=fw["id"],
-            title=fw["title"],
-            description=fw["description"],
-            imdb_rating=fw["rating"],
-            type=fw["type"],
+            id=filmwork["id"],
+            title=filmwork["title"],
+            description=filmwork["description"],
+            imdb_rating=filmwork["rating"],
+            type=filmwork["type"],
             director=director,
-            created=fw["created"],
-            modified=fw["modified"],
+            created=filmwork["created"],
+            modified=filmwork["modified"],
             actors=actors,
             actors_names=actors_names,
             writers=writers,
             writers_names=writers_names,
-            genre=fw["genre_name"],
+            genre=filmwork["genre_name"],
         )
         return ret
 
