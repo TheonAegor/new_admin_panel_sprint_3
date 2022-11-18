@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 from redis import Redis
 
 
-def default(obj):
+def get_default(obj):
     if isinstance(obj, (date, datetime)):
         return obj.isoformat()
 
@@ -44,7 +44,7 @@ class RedisStorage(BaseStorage):
         for field, field_value in state.items():
             self.state_data[field] = field_value
         self.redis_adapter.set(
-            "data", json.dumps(self.state_data, default=default)
+            "data", json.dumps(self.state_data, default=get_default)
         )
 
     def retrieve_state(self, key: str) -> dict:
