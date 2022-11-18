@@ -113,7 +113,7 @@ class ElasticAccessor(IDataAccessor):
             self.elastic.indices.create(index=self.index, body=request_body)
             logger.info(f"Index {self.index} succesfully created!")
 
-    def gen_data(self, filmworks: tp.List[EnrichedFilmWork]):
+    def gen_data(self, filmworks: tp.list[EnrichedFilmWork]):
         logger.info("Start generating data")
         ret = []
         for filmwork in filmworks:
@@ -155,7 +155,7 @@ class ElasticAccessor(IDataAccessor):
 class Loader:
     def __init__(
         self,
-        index_data: tp.List[tp.Any],
+        index_data: tp.list[tp.Any],
         conn_details: ConnectionDetails = {},
         data_accessor: IDataAccessor = ElasticAccessor,
         **extra_accessor_kwargs,

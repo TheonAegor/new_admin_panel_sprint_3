@@ -1,6 +1,6 @@
 import contextlib
 import datetime
-from typing import Generator, List, Literal, Optional
+from typing import Generator, Literal, Optional
 from uuid import uuid4
 
 import psycopg2
@@ -51,7 +51,7 @@ class Extractor:
         entity: str = "person",
         limit: Optional[str] = None,
         time_of_run: Optional[datetime.datetime] = None,
-    ) -> Generator[List[str], None, None]:
+    ) -> Generator[list[str], None, None]:
         while True:
             excepted_ids = state.get_state(f"{entity}_excepted_ids")
             if not time_of_run:
@@ -92,10 +92,10 @@ class Extractor:
     def extract_modified_filmworks(
         self,
         cursor: cursor,
-        entity_ids: Generator[List[uuid4], None, None],
+        entity_ids: Generator[list[uuid4], None, None],
         entity: str = "person",
         limit: Optional[str] = None,
-    ) -> Generator[List[str], None, None]:
+    ) -> Generator[list[str], None, None]:
         for batch in entity_ids:
             if entity == "film_work":
                 yield batch
@@ -124,10 +124,10 @@ class Extractor:
     def get_full_filmwork_data_for_es(
         self,
         cursor: cursor,
-        filmworks_ids: Generator[List[uuid4], None, None],
+        filmworks_ids: Generator[list[uuid4], None, None],
         limit: Optional[str] = None,
         where: bool = True,
-    ) -> Generator[List[FilmWork], None, None]:
+    ) -> Generator[list[FilmWork], None, None]:
         """Извлекает нужные поля для отправки в Эластик."""
         for batch in filmworks_ids:
             lim = f"LIMIT {limit}" if limit else ""
@@ -155,7 +155,7 @@ class Extractor:
             )
             yield fullfilled_fws
 
-    def extract(self, time_of_run: datetime.datetime) -> List[FilmWork]:
+    def extract(self, time_of_run: datetime.datetime) -> list[FilmWork]:
         with psql_conn_context(**self.conn_details) as connection:
             cursor = connection.cursor()
             persons_ids = self.extract_modified_entities(cursor, time_of_run)
@@ -171,7 +171,7 @@ class ExtractEntity(Extractor):
     def extract(
         self,
         entity: Literal["genre", "person", "film_work"],
-    ) -> Generator[List[FilmWork], None, None]:
+    ) -> Generator[list[FilmWork], None, None]:
 
         with psql_conn_context(**self.conn_details) as connection:
             cursor = connection.cursor()
@@ -191,7 +191,7 @@ class ExtractEntity(Extractor):
                 yield batch
 
     @gen_backoff()
-    def extract_only_fw(self) -> Generator[List[FilmWork], None, None]:
+    def extract_only_fw(self) -> Generator[list[FilmWork], None, None]:
         with psql_conn_context(**self.conn_details) as connection:
             cursor = connection.cursor()
             entities_ids_gen = self.extract_modified_entities(

@@ -1,9 +1,7 @@
 import os
-import typing as tp
-from dataclasses import asdict, astuple
+from dataclasses import astuple
 
 import psycopg2
-import psycopg2.extras
 from dotenv import load_dotenv
 from dto.movies_objects import (
     FilmWork,
@@ -69,7 +67,8 @@ def main() -> None:
                         batch_to_insert.append(dto(**r_dict))
                     objs = [astuple(o) for o in batch_to_insert]
                     insert_template = ",".join(["%s"] * len(objs))
-                    insert_sql = "insert into {0} ({1}) values {2} ON CONFLICT DO NOTHING;".format(
+                    insert_sql = "insert into {0} ({1}) values {2} ON CONFLICT DO \
+                        NOTHING;".format(
                         dto.get_psql_table_name(),
                         dto.get_psql_headers(),
                         insert_template,

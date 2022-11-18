@@ -1,6 +1,5 @@
 import datetime
 from dataclasses import asdict, dataclass, fields
-from typing import List
 
 from pydantic import BaseModel
 
@@ -40,10 +39,10 @@ class EnrichedFilmWork:
     director: str
     created: datetime.datetime
     modified: datetime.datetime
-    actors: List[Person]
-    actors_names: List[str]
-    writers: List[Person]
-    writers_names: List[str]
+    actors: list[Person]
+    actors_names: list[str]
+    writers: list[Person]
+    writers_names: list[str]
     genre: str
 
     def get_actors(self):

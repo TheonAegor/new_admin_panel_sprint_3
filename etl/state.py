@@ -1,7 +1,6 @@
 import abc
 import json
 from datetime import date, datetime
-from typing import Any, List
 from zoneinfo import ZoneInfo
 
 from redis import Redis
@@ -57,11 +56,11 @@ class State:
     def __init__(self, storage: BaseStorage):
         self.storage = storage
 
-    def set_state(self, key: str, key_value: Any) -> None:
+    def set_state(self, key: str, key_value: any) -> None:
         """Установить состояние для определённого ключа"""
         self.storage.save_state({key: key_value})
 
-    def get_state(self, key: str) -> Any:
+    def get_state(self, key: str) -> any:
         """Получить состояние по определённому ключу"""
         state = self.storage.retrieve_state(key)
         return state
@@ -75,7 +74,7 @@ def get_all_keys_and_values(state: State):
     return ret
 
 
-def empty_state(state: State, keys: List[str]):
+def empty_state(state: State, keys: list[str]):
     for key in keys:
         state.set_state(key, None)
 
