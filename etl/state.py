@@ -16,12 +16,12 @@ class BaseStorage(abc.ABC):
     @abc.abstractmethod
     def save_state(self, state: dict) -> None:
         """Сохранить состояние в постоянное хранилище"""
-        raise NotImplementedError
+        pass
 
     @abc.abstractmethod
     def retrieve_state(self) -> dict:
         """Загрузить состояние локально из постоянного хранилища"""
-        raise NotImplementedError
+        pass
 
 
 class RedisStorage(BaseStorage):
@@ -36,13 +36,13 @@ class RedisStorage(BaseStorage):
         self.state_data = state_data
 
     def save_state(self, state: dict) -> None:
-        state_data = json.loads(
+        """Я и хотел хранить в отдельном ключе, но меня сбили с толку тесты
+            для задания со звездочкой, где FakeRedis проверял все в ключе
+            data."""
+        self.state_data = json.loads(
             (self.redis_adapter.get("data")).decode("utf-8")
         )
-        for field, field_value in state_data.items():
-            self.state_data[field] = field_value
-        for field, field_value in state.items():
-            self.state_data[field] = field_value
+        self.state_data |= state
         self.redis_adapter.set(
             "data", json.dumps(self.state_data, default=get_default)
         )
