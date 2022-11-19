@@ -1,12 +1,12 @@
 from dataclasses import dataclass
-from typing import List, Mapping, Tuple
+from typing import Mapping, Tuple, list
 
 
 @dataclass
 class SQLiteRow:
-    result: List[Mapping]
+    result: list[Mapping]
 
 
 @dataclass
 class PsqlRes:
-    result: List[Tuple]
+    result: list[Tuple]

@@ -98,6 +98,8 @@ def gen_backoff(start_sleep_time=0.1, factor=2, border_sleep_time=10):
                     )
                 except Exception as e:
                     logger.error(e)
+                else:
+                    return ret
                 sleep(sleep_time)
                 sleep_time = sleep_time * factor
                 if sleep_time > border_sleep_time:

@@ -28,8 +28,11 @@ services:
       - discovery.type=single-node
       - bootstrap.system_call_filter=false
       - bootstrap.memory_lock=true
+      - network.host=localhost
     volumes:
       - esdata:/usr/share/elasticsearch/data
+    # healthcheck:
+    #   test: ["curl",]
     depends_on:
       db:
         condition: service_healthy

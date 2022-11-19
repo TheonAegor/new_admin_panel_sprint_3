@@ -12,10 +12,6 @@ class IDataAccessor(abc.ABC):
     def push(self, index_data):
         pass
 
-    @abc.abstractmethod
-    def push_bulk(self, index_data):
-        pass
-
 
 class ElasticAccessor(IDataAccessor):
     def __init__(

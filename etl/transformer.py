@@ -1,4 +1,5 @@
 from dto import EnrichedFilmWork, Person
+from utils import logger
 
 
 class Transformer:
@@ -69,7 +70,10 @@ class Transformer:
         return ret
 
     def transform_for_es(self):
+        logger.info("Start transforming objects!")
         if not len(self.raw_objects):
+            logger.info("Objects to transform are empty!")
             return self.raw_objects
         objects = self.transform_to_objects()
+        logger.info("Objects transformed!")
         return objects
